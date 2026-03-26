@@ -11,14 +11,15 @@ jobs:
       - name: Checkout TerraGoat Code
         uses: actions/checkout@v4
 
-      # 1. Run Checkov and output to JSON
-      - name: Run Checkov Scanner
-        uses: bridgecrewio/checkov-action@master
+      # 1. Bypass the wrapper: Install Checkov directly via Python and run it
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          directory: .
-          soft_fail: true 
-          output_format: json 
-          output_file_path: console,checkov-results.json
+          python-version: '3.10'
+      - name: Run Checkov Scanner directly
+        run: |
+          pip install checkov
+          checkov -d . --soft-fail -o json > checkov-results.json
 
       # 2. Run Trivy and output to JSON
       - name: Run Trivy Scanner
