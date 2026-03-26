@@ -1,0 +1,37 @@
+name: IaC Scanner Feasibility Test
+
+# This allows you to manually trigger the test by clicking a button
+on:
+  workflow_dispatch: 
+
+jobs:
+  benchmark-scanners:
+    runs-on: ubuntu-latest
+    
+    steps:
+      # 1. Pulls your TerraGoat code into the cloud server
+      - name: Checkout TerraGoat Code
+        uses: actions/checkout@v4
+
+      # 2. Runs Checkov
+      - name: Run Checkov Scanner
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: .
+          soft_fail: true 
+          output_format: cli 
+
+      # 3. Runs Trivy
+      - name: Run Trivy Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'config' 
+          scan-ref: '.'
+          exit-code: '0' 
+
+      # 4. Runs KICS
+      - name: Run KICS Scanner
+        uses: checkmarx/kics-github-action@v2
+        with:
+          path: .
+          ignore_on_exit: results
