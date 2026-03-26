@@ -11,7 +11,11 @@ jobs:
       - name: Checkout TerraGoat Code
         uses: actions/checkout@v4
 
-      # 1. Bypass the wrapper: Install Checkov directly via Python and run it
+      # NEW: Create a dedicated, clean folder for our data
+      - name: Create Results Directory
+        run: mkdir benchmark-results
+
+      # 1. Run Checkov and output directly into the folder
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -19,9 +23,9 @@ jobs:
       - name: Run Checkov Scanner directly
         run: |
           pip install checkov
-          checkov -d . --soft-fail -o json > checkov-results.json
+          checkov -d . --soft-fail -o json > benchmark-results/checkov-results.json
 
-      # 2. Run Trivy and output to JSON
+      # 2. Run Trivy and output directly into the folder
       - name: Run Trivy Scanner
         uses: aquasecurity/trivy-action@0.35.0
         with:
@@ -29,23 +33,21 @@ jobs:
           scan-ref: '.'
           exit-code: '0' 
           format: 'json'
-          output: 'trivy-results.json'
+          output: 'benchmark-results/trivy-results.json'
 
-      # 3. Run KICS and output to JSON
+      # 3. Run KICS and output directly into the folder
       - name: Run KICS Scanner
         uses: checkmarx/kics-github-action@v2.1.20
         with:
           path: .
           ignore_on_exit: results 
-          output_path: .
+          output_path: benchmark-results/
           output_formats: 'json'
 
-      # 4. Upload the files so you can download them!
+      # 4. Upload the ENTIRE folder as one clean ZIP file
       - name: Upload Benchmark Data
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: scanner-benchmark-results
-          path: |
-            checkov-results.json
-            trivy-results.json
-            results.json
+          path: benchmark-results/
