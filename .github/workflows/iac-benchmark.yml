@@ -1,4 +1,4 @@
-name: IaC Scanner Feasibility Test
+name: IaC Scanner Data Collection
 
 on:
   workflow_dispatch: 
@@ -11,24 +11,40 @@ jobs:
       - name: Checkout TerraGoat Code
         uses: actions/checkout@v4
 
+      # 1. Run Checkov and output to JSON
       - name: Run Checkov Scanner
         uses: bridgecrewio/checkov-action@master
         with:
           directory: .
           soft_fail: true 
-          output_format: cli 
+          output_format: json 
+          output_file_path: console,checkov-results.json
 
-      # Pinned to the safe, post-hack version (0.35.0)
+      # 2. Run Trivy and output to JSON
       - name: Run Trivy Scanner
         uses: aquasecurity/trivy-action@0.35.0
         with:
           scan-type: 'config' 
           scan-ref: '.'
           exit-code: '0' 
+          format: 'json'
+          output: 'trivy-results.json'
 
-      # Pinned to the emergency Checkmarx patch (v2.1.20)
+      # 3. Run KICS and output to JSON
       - name: Run KICS Scanner
         uses: checkmarx/kics-github-action@v2.1.20
         with:
           path: .
-          ignore_on_exit: results
+          ignore_on_exit: results 
+          output_path: .
+          output_formats: 'json'
+
+      # 4. Upload the files so you can download them!
+      - name: Upload Benchmark Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: scanner-benchmark-results
+          path: |
+            checkov-results.json
+            trivy-results.json
+            results.json
